@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.5.16;
+pragma solidity 0.7.6;
 
 interface IBEP20 {
   /**
@@ -11,7 +11,7 @@ interface IBEP20 {
   /**
    * @dev Returns the token decimals.
    */
-  function decimals() external view returns (uint8);
+  function decimals() external view returns (uint256);
 
   /**
    * @dev Returns the token symbol.
@@ -106,7 +106,7 @@ interface IBEP20 {
 contract Context {
   // Empty internal constructor, to prevent people from mistakenly deploying
   // an instance of this contract, which should be used via inheritance.
-  constructor () internal { }
+  constructor () { }
 
   function _msgSender() internal view returns (address payable) {
     return msg.sender;
@@ -287,7 +287,7 @@ contract Ownable is Context {
   /**
    * @dev Initializes the contract setting the deployer as the initial owner.
    */
-  constructor () internal {
+  constructor () {
     address msgSender = _msgSender();
     _owner = msgSender;
     emit OwnershipTransferred(address(0), msgSender);
@@ -346,15 +346,15 @@ contract GCRtoken is Context, IBEP20, Ownable {
   mapping (address => mapping (address => uint256)) private _allowances;
 
   uint256 private _totalSupply;
-  uint8 private _decimals;
-  string private _symbol;
-  string private _name;
+  uint8 public _decimals;
+  string public _symbol;
+  string public _name;
 
-  constructor() public {
+  constructor() {
     _name = "Gold Coin Reserve";
     _symbol = "GCR";
     _decimals = 18;
-    _totalSupply = 3000000000000000000000000;
+    _totalSupply = 3000000 * (10 ** uint256(_decimals));
     _balances[msg.sender] = _totalSupply;
 
     emit Transfer(address(0), msg.sender, _totalSupply);
@@ -363,79 +363,79 @@ contract GCRtoken is Context, IBEP20, Ownable {
   /**
    * @dev Returns the bep token owner.
    */
-  function getOwner() external view returns (address) {
+  function getOwner() external view override returns (address) {
     return owner();
   }
 
   /**
    * @dev Returns the token decimals.
    */
-  function decimals() external view returns (uint8) {
+  function decimals() external view override returns (uint256) {
     return _decimals;
   }
 
   /**
    * @dev Returns the token symbol.
    */
-  function symbol() external view returns (string memory) {
+  function symbol() external view override returns (string memory) {
     return _symbol;
   }
 
   /**
   * @dev Returns the token name.
   */
-  function name() external view returns (string memory) {
+  function name() external view override returns (string memory) {
     return _name;
   }
 
   /**
-   * @dev See {totalSupply}.
+   * @dev See {BEP20-totalSupply}.
    */
-  function totalSupply() external view returns (uint256) {
+  function totalSupply() external view override returns (uint256) {
     return _totalSupply;
   }
 
   /**
-   * @dev See {balanceOf}.
+   * @dev See {BEP20-balanceOf}.
    */
-  function balanceOf(address account) external view returns (uint256) {
+  function balanceOf(address account) external view override returns (uint256) {
     return _balances[account];
   }
 
   /**
-   * @dev See {transfer}.
+   * @dev See {BEP20-transfer}.
    *
    * Requirements:
    *
    * - `recipient` cannot be the zero address.
    * - the caller must have a balance of at least `amount`.
    */
-  function transfer(address recipient, uint256 amount) external returns (bool) {
+  function transfer(address recipient, uint256 amount) external override returns (bool) {
     _transfer(_msgSender(), recipient, amount);
     return true;
   }
 
   /**
-   * @dev See {allowance}.
+   * @dev See {BEP20-allowance}.
    */
-  function allowance(address owner, address spender) external view returns (uint256) {
+  function allowance(address owner, address spender) external view override returns (uint256) {
     return _allowances[owner][spender];
   }
 
   /**
-   * @dev See {approve}.
+   * @dev See {BEP20-approve}.
    *
    * Requirements:
    *
    * - `spender` cannot be the zero address.
    */
-  function approve(address spender, uint256 amount) external returns (bool) {
+  function approve(address spender, uint256 amount) external override returns (bool) {
     _approve(_msgSender(), spender, amount);
     return true;
   }
 
   /**
-   * @dev See {transferFrom}.
+   * @dev See {BEP20-transferFrom}.
    *
    * Emits an {Approval} event indicating the updated allowance. This is not
    * required by the EIP. See the note at the beginning of {BEP20};
@@ -446,7 +446,7 @@ contract GCRtoken is Context, IBEP20, Ownable {
    * - the caller must have allowance for `sender`'s tokens of at least
    * `amount`.
    */
-  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {
+  function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
     _transfer(sender, recipient, amount);
     _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "BEP20: transfer amount exceeds allowance"));
     return true;
@@ -473,7 +473,7 @@ contract GCRtoken is Context, IBEP20, Ownable {
    * @dev Atomically decreases the allowance granted to `spender` by the caller.
    *
    * This is an alternative to {approve} that can be used as a mitigation for
-   * problems described in {approve}.
+   * problems described in {BEP20-approve}.
    *
    * Emits an {Approval} event indicating the updated allowance.
    *
@@ -485,19 +485,6 @@ contract GCRtoken is Context, IBEP20, Ownable {
    */
   function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
     _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "BEP20: decreased allowance below zero"));
-    return true;
-  }
-
-  /**
-   * @dev Creates `amount` tokens and assigns them to `msg.sender`, increasing
-   * the total supply.
-   *
-   * Requirements
-   *
-   * - `msg.sender` must be the token owner
-   */
-  function mint(uint256 amount) public onlyOwner returns (bool) {
-    _mint(_msgSender(), amount);
     return true;
   }
 
@@ -524,42 +511,6 @@ contract GCRtoken is Context, IBEP20, Ownable {
     emit Transfer(sender, recipient, amount);
   }
 
-  /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-   * the total supply.
-   *
-   * Emits a {Transfer} event with `from` set to the zero address.
-   *
-   * Requirements
-   *
-   * - `to` cannot be the zero address.
-   */
-  function _mint(address account, uint256 amount) internal {
-    require(account != address(0), "BEP20: mint to the zero address");
-
-    _totalSupply = _totalSupply.add(amount);
-    _balances[account] = _balances[account].add(amount);
-    emit Transfer(address(0), account, amount);
-  }
-
-  /**
-   * @dev Destroys `amount` tokens from `account`, reducing the
-   * total supply.
-   *
-   * Emits a {Transfer} event with `to` set to the zero address.
-   *
-   * Requirements
-   *
-   * - `account` cannot be the zero address.
-   * - `account` must have at least `amount` tokens.
-   */
-  function _burn(address account, uint256 amount) internal {
-    require(account != address(0), "BEP20: burn from the zero address");
-
-    _balances[account] = _balances[account].sub(amount, "BEP20: burn amount exceeds balance");
-    _totalSupply = _totalSupply.sub(amount);
-    emit Transfer(account, address(0), amount);
-  }
-
   /**
    * @dev Sets `amount` as the allowance of `spender` over the `owner`s tokens.
    *
@@ -579,16 +530,5 @@ contract GCRtoken is Context, IBEP20, Ownable {
 
     _allowances[owner][spender] = amount;
     emit Approval(owner, spender, amount);
-  }
-
-  /**
-   * @dev Destroys `amount` tokens from `account`.`amount` is then deducted
-   * from the caller's allowance.
-   *
-   * See {_burn} and {_approve}.
-   */
-  function _burnFrom(address account, uint256 amount) internal {
-    _burn(account, amount);
-    _approve(account, _msgSender(), _allowances[account][_msgSender()].sub(amount, "BEP20: burn amount exceeds allowance"));
   }
 }
